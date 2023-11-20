@@ -28,7 +28,6 @@ class Scanner:
         "00002902-0000-1000-8000-00805f9b34fb",
         "00010203-0405-0607-0809-0a0b0c0d1912",
         "00002901-0000-1000-8000-00805f9b34fb",
-
         "00002a00-0000-1000-8000-00805f9b34fb",
         "00002a01-0000-1000-8000-00805f9b34fb",
         "00002a04-0000-1000-8000-00805f9b34fb",
@@ -42,9 +41,7 @@ class Scanner:
         "00010203-0405-0607-0809-0a0b0c0d2b12",
     ]
 
-    BLEAK_KWARGS = {
-        "service_uuids": UUIDS
-    }
+    BLEAK_KWARGS = {"service_uuids": UUIDS}
 
     def __init__(self):
         self.devices_dict = {}
@@ -55,7 +52,7 @@ class Scanner:
     @staticmethod
     def is_darwin():
         try:
-            return platform.system().lower() == 'darwin'
+            return platform.system().lower() == "darwin"
         except:
             return False
 
@@ -63,7 +60,7 @@ class Scanner:
     def get_bleak_kwargs():
         return Scanner.BLEAK_KWARGS if Scanner.is_darwin() else {}
 
-    async def scan(self, timeout=3.0, dev_name='walkingpad', matcher=None):
+    async def scan(self, timeout=3.0, dev_name="walkingpad", matcher=None):
         kwargs = Scanner.get_bleak_kwargs()
         logger.info("Scanning for peripherals...")
         logger.debug("Scanning kwargs: %s" % (kwargs,))
@@ -71,7 +68,14 @@ class Scanner:
         dev = await scanner.discover(timeout=timeout, **kwargs)
         for i in range(len(dev)):
             # Print the devices discovered
-            info_str = ', '.join(["[%2d]" % i, str(dev[i].address), str(dev[i].name), str(dev[i].metadata["uuids"])])
+            info_str = ", ".join(
+                [
+                    "[%2d]" % i,
+                    str(dev[i].address),
+                    str(dev[i].name),
+                    str(dev[i].metadata["uuids"]),
+                ]
+            )
             logger.info("Device: %s" % info_str)
 
             # Put devices information into list
@@ -130,7 +134,7 @@ class WalkingPad:
 
     @staticmethod
     def int2byte(val, width=3):
-        return [(val >> (8 * (width - 1 - i)) & 0xff) for i in range(width)]
+        return [(val >> (8 * (width - 1 - i)) & 0xFF) for i in range(width)]
 
     @staticmethod
     def byte2int(val, width=3):
@@ -174,17 +178,29 @@ class WalkingPadCurStatus:
     @staticmethod
     def from_data(cmd):
         if not WalkingPadCurStatus.check_type(cmd):
-            raise ValueError('Incorrect message type, could not parse')
+            raise ValueError("Incorrect message type, could not parse")
         m = WalkingPadCurStatus()
         m.load_from(cmd)
         return m
 
     def __str__(self):
-        return 'WalkingPadCurStatus(dist=%s, time=%s, steps=%s, speed=%s, state=%s, ' \
-               'mode=%s, app_speed=%s, button=%s, rest=%s)' \
-               % (self.dist / 100, self.time, self.steps, self.speed / 10, self.belt_state,
-                  self.manual_mode, self.app_speed / 30 if self.app_speed > 0 else 0, self.manual_mode,
-                  binascii.hexlify(bytearray([self.raw[15], self.raw[17]])).decode('utf8'))
+        return (
+            "WalkingPadCurStatus(dist=%s, time=%s, steps=%s, speed=%s, state=%s, "
+            "mode=%s, app_speed=%s, button=%s, rest=%s)"
+            % (
+                self.dist / 100,
+                self.time,
+                self.steps,
+                self.speed / 10,
+                self.belt_state,
+                self.manual_mode,
+                self.app_speed / 30 if self.app_speed > 0 else 0,
+                self.manual_mode,
+                binascii.hexlify(bytearray([self.raw[15], self.raw[17]])).decode(
+                    "utf8"
+                ),
+            )
+        )
 
 
 class WalkingPadLastStatus:
@@ -209,14 +225,18 @@ class WalkingPadLastStatus:
     @staticmethod
     def from_data(cmd):
         if not WalkingPadLastStatus.check_type(cmd):
-            raise ValueError('Incorrect message type, could not parse')
+            raise ValueError("Incorrect message type, could not parse")
         m = WalkingPadLastStatus()
         m.load_from(cmd)
         return m
 
     def __str__(self):
-        return 'WalkingPadLastStatus(dist=%s, time=%s, steps=%s, rest=%s)' \
-               % (self.dist / 100, self.time, self.steps, binascii.hexlify(self.raw[2:8]).decode('utf8'))
+        return "WalkingPadLastStatus(dist=%s, time=%s, steps=%s, rest=%s)" % (
+            self.dist / 100,
+            self.time,
+            self.steps,
+            binascii.hexlify(self.raw[2:8]).decode("utf8"),
+        )
 
 
 class Controller:
@@ -248,8 +268,8 @@ class Controller:
 
     def notif_handler(self, sender, data):
         logger_fnc = logger.info if self.log_messages_info else logger.debug
-        msg_hex = ', '.join('{:02x}'.format(x) for x in data)
-        logger_fnc('Msg: %s' % msg_hex)
+        msg_hex = ", ".join("{:02x}".format(x) for x in data)
+        logger_fnc("Msg: %s" % msg_hex)
         already_notified = False
 
         try:
@@ -260,7 +280,7 @@ class Controller:
                 self.on_cur_status_received(sender, m)
                 if self.handler_cur_status:
                     self.handler_cur_status(sender, m)
-                logger_fnc('Status: %s' % (m,))
+                logger_fnc("Status: %s" % (m,))
 
             elif WalkingPadLastStatus.check_type(data):
                 m = WalkingPadLastStatus.from_data(data)
@@ -269,7 +289,7 @@ class Controller:
                 self.on_last_status_received(sender, m)
                 if self.handler_last_status:
                     self.handler_last_status(sender, m)
-                logger_fnc('Record: %s' % (m,))
+                logger_fnc("Record: %s" % (m,))
 
             self.on_message_received(sender, data, already_notified)
             if self.handler_message:
@@ -300,7 +320,7 @@ class Controller:
     async def connect(self, address=None):
         address = address or self.address
         if not address:
-            raise ValueError('No address given to connect to')
+            raise ValueError("No address given to connect to")
 
         logger.info("Connecting to %s" % (address,))
         kwargs = Scanner.get_bleak_kwargs()
@@ -308,9 +328,13 @@ class Controller:
         return await self.client.connect(timeout=10.0, **kwargs)
 
     async def send_cmd(self, cmd):
-        self.fix_crc(cmd)
-        if self.last_cmd_time and time.time() - self.last_cmd_time < self.minimal_cmd_space:
-            to_sleep = max(0, min(time.time() - self.last_cmd_time, self.minimal_cmd_space))
+        if (
+            self.last_cmd_time
+            and time.time() - self.last_cmd_time < self.minimal_cmd_space
+        ):
+            to_sleep = max(
+                0, min(time.time() - self.last_cmd_time, self.minimal_cmd_space)
+            )
             await asyncio.sleep(to_sleep)
 
         return await self.send_cmd_raw(cmd)
@@ -318,22 +342,30 @@ class Controller:
     async def send_cmd_raw(self, cmd):
         self.last_raw_cmd = cmd
         self.last_cmd_time = time.time()
-        r = await self.client.write_gatt_char(self.char_fe02, cmd)
+        r = await self.client.write_gatt_char(self.write_characteristic, cmd)
         return r
 
     async def switch_mode(self, mode: int):
-        cmd = bytearray([247, 162, 2, mode, 0xff, 253])
+        cmd = bytearray([247, 162, 2, mode, 0xFF, 253])
         return await self.send_cmd(cmd)
 
-    async def change_speed(self, speed: int):
-        cmd = bytearray([247, 162, 1, speed, 0xff, 253])
+    async def change_speed(self, speed: float):
+        speed = int(speed * 100)
+        hex_value = hex(speed)[2:]
+        if len(hex_value) < 4:
+            hex_value = "0" * (4 - len(hex_value)) + hex_value
+
+        little_endian = bytearray.fromhex(hex_value)
+        little_endian.reverse()
+        cmd = bytearray([2]) + little_endian
         return await self.send_cmd(cmd)
 
     async def stop_belt(self):
-        return await self.change_speed(0)
+        cmd = bytearray([8, 1])
+        return await self.send_cmd(cmd)
 
     async def start_belt(self):
-        cmd = bytearray([247, 162, 4, 1, 0xff, 253])
+        cmd = bytearray([7])
         return await self.send_cmd(cmd)
 
     async def ask_profile(self, profile_idx=0):
@@ -345,7 +377,9 @@ class Controller:
         return await self.send_cmd(cmd)
 
     async def ask_hist(self, mode=0):
-        cmd = bytearray([247, 167, 170, 255, 80, 253] if mode == 0 else [247, 167, 170, 0, 81, 253])
+        cmd = bytearray(
+            [247, 167, 170, 255, 80, 253] if mode == 0 else [247, 167, 170, 0, 81, 253]
+        )
         return await self.send_cmd(cmd)
 
     async def cmd_162_3_7(self, mode=0):
@@ -369,7 +403,9 @@ class Controller:
     async def set_pref_inteli(self, enabled=False):
         return await self.set_pref_int(WalkingPad.PREFS_START_INTEL, int(enabled))
 
-    async def set_pref_sensitivity(self, sensitivity=3):  # 1 = high, 2 = medium, 3 = low
+    async def set_pref_sensitivity(
+        self, sensitivity=3
+    ):  # 1 = high, 2 = medium, 3 = low
         return await self.set_pref_int(WalkingPad.PREFS_SENSITIVITY, sensitivity)
 
     async def set_pref_display(self, bit_mask: int):  # 7bits
@@ -391,8 +427,8 @@ class Controller:
         x = client.is_connected
         logger.info("Connected: {0}".format(x))
 
-        self.char_fe01 = None
-        self.char_fe02 = None
+        self.notif_characteristic = None
+        self.write_characteristic = None
 
         for service in client.services:
             logger.info("[Service] {0}: {1}".format(service.uuid, service.description))
@@ -400,10 +436,13 @@ class Controller:
                 value = None
                 if "read" in char.properties:
                     try:
-                        if self.do_read_chars and char.uuid != '0000fe01-0000-1000-8000-00805f9b34fb':
+                        if (
+                            self.do_read_chars
+                            and char.uuid != "0000fe01-0000-1000-8000-00805f9b34fb"
+                        ):
                             value = bytes(await client.read_gatt_char(char.uuid))
                     except Exception as e:
-                        logger.info('read failed for %s' % (char.uuid,))
+                        logger.info("read failed for %s" % (char.uuid,))
                         value = str(e).encode()
 
                 logger.info(
@@ -416,11 +455,11 @@ class Controller:
                     )
                 )
 
-                if char.uuid.startswith('0000fe01'):
-                    self.char_fe01 = char
+                if char.uuid.startswith("00002ad9"):
+                    self.write_characteristic = char
 
-                if char.uuid.startswith('0000fe02'):
-                    self.char_fe02 = char
+                if char.uuid.startswith("00002acd"):
+                    self.notif_characteristic = char
 
                 for descriptor in char.descriptors:
                     value = await client.read_gatt_descriptor(descriptor.handle)
@@ -431,13 +470,14 @@ class Controller:
                     )
 
         try:
-            logger.info('Enabling notification for %s' % (self.char_fe01.uuid,))
-            await client.start_notify(self.char_fe01.uuid, self.notif_handler)
+            logger.info(
+                "Enabling notification for %s" % (self.notif_characteristic.uuid,)
+            )
+            await client.start_notify(
+                self.notif_characteristic.uuid, self.notif_handler
+            )
 
         except Exception as e:
             logger.warning("Notify failed: %s" % (e,))
 
-        logger.info('Service enumeration done')
-
-
-
+        logger.info("Service enumeration done")
