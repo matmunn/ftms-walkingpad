@@ -92,6 +92,9 @@ class Scanner:
 
         if not dev:
             logger.warning("Scanning ended up with no results")
+            return []
+
+        return self.walking_belt_candidates
 
 
 class WalkingPad:
