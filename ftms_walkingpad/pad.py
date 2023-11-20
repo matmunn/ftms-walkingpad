@@ -21,24 +21,8 @@ logger = logging.getLogger(__name__)
 
 class Scanner:
     UUIDS = [
-        "00001800-0000-1000-8000-00805f9b34fb",
-        "0000180a-0000-1000-8000-00805f9b34fb",
-        "00010203-0405-0607-0809-0a0b0c0d1912",
-        "0000fe00-0000-1000-8000-00805f9b34fb",
-        "00002902-0000-1000-8000-00805f9b34fb",
-        "00010203-0405-0607-0809-0a0b0c0d1912",
-        "00002901-0000-1000-8000-00805f9b34fb",
-        "00002a00-0000-1000-8000-00805f9b34fb",
-        "00002a01-0000-1000-8000-00805f9b34fb",
-        "00002a04-0000-1000-8000-00805f9b34fb",
-        "00002a25-0000-1000-8000-00805f9b34fb",
-        "00002a26-0000-1000-8000-00805f9b34fb",
-        "00002a28-0000-1000-8000-00805f9b34fb",
-        "00002a24-0000-1000-8000-00805f9b34fb",
-        "00002a29-0000-1000-8000-00805f9b34fb",
-        "0000fe01-0000-1000-8000-00805f9b34fb",
-        "0000fe02-0000-1000-8000-00805f9b34fb",
-        "00010203-0405-0607-0809-0a0b0c0d2b12",
+        "00001826-0000-1000-8000-00805f9b34fb",
+        "00002ad9-0000-1000-8000-00805f9b34fb",
     ]
 
     BLEAK_KWARGS = {"service_uuids": UUIDS}
@@ -60,7 +44,7 @@ class Scanner:
     def get_bleak_kwargs():
         return Scanner.BLEAK_KWARGS if Scanner.is_darwin() else {}
 
-    async def scan(self, timeout=3.0, dev_name="walkingpad", matcher=None):
+    async def scan(self, timeout=3.0):
         kwargs = Scanner.get_bleak_kwargs()
         logger.info("Scanning for peripherals...")
         logger.debug("Scanning kwargs: %s" % (kwargs,))
@@ -81,20 +65,13 @@ class Scanner:
             # Put devices information into list
             self.devices_dict[dev[i].address] = []
             self.devices_dict[dev[i].address].append(dev[i].name)
-            self.devices_dict[dev[i].address].append(dev[i].metadata["uuids"])
-            self.devices_list.append(dev[i].address)
-
-            if dev_name and dev_name in dev[i].name.lower():
-                self.walking_belt_candidates.append(dev[i])
-
-            elif matcher and matcher(dev[i].name):
-                self.walking_belt_candidates.append(dev[i])
+            self.devices_dict[dev[i].address].append(dev[i].AdvertisementData["uuids"])
 
         if not dev:
             logger.warning("Scanning ended up with no results")
             return []
 
-        return self.walking_belt_candidates
+        return dev
 
 
 class WalkingPad:
