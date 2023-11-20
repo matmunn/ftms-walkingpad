@@ -46,32 +46,16 @@ class Scanner:
 
     async def scan(self, timeout=3.0):
         kwargs = Scanner.get_bleak_kwargs()
-        logger.info("Scanning for peripherals...")
+        logger.debug("Scanning for peripherals...")
         logger.debug("Scanning kwargs: %s" % (kwargs,))
         scanner = bleak.BleakScanner(**kwargs)
-        dev = await scanner.discover(timeout=timeout, **kwargs)
-        for i in range(len(dev)):
-            # Print the devices discovered
-            info_str = ", ".join(
-                [
-                    "[%2d]" % i,
-                    str(dev[i].address),
-                    str(dev[i].name),
-                    str(dev[i].metadata["uuids"]),
-                ]
-            )
-            logger.info("Device: %s" % info_str)
+        devices = await scanner.discover(timeout=timeout, **kwargs)
 
-            # Put devices information into list
-            self.devices_dict[dev[i].address] = []
-            self.devices_dict[dev[i].address].append(dev[i].name)
-            self.devices_dict[dev[i].address].append(dev[i].AdvertisementData["uuids"])
-
-        if not dev:
-            logger.warning("Scanning ended up with no results")
+        if not devices:
+            logger.debug("Scanning ended up with no results")
             return []
 
-        return dev
+        return [(dev.address, dev.name) for dev in devices]
 
 
 class WalkingPad:
